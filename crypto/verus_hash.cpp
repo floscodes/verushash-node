@@ -3,14 +3,16 @@
 // file COPYING or http://www.opensource.org/licenses/mit-license.php.
 
 /*
-This provides the PoW hash function for Verus, a CPU-optimized hash 
-function with a Haraka V2 core. Unlike Haraka, which is made for short 
-inputs only, Verus Hash takes any length of input and produces a 256 
+This provides the PoW hash function for Verus, a CPU-optimized hash
+function with a Haraka V2 core. Unlike Haraka, which is made for short
+inputs only, Verus Hash takes any length of input and produces a 256
 bit output.
 */
 #include <string.h>
 #include "common.h"
 #include "verus_hash.h"
+#include "haraka.h"
+#include "haraka_portable.h"
 
 void (*CVerusHash::haraka512Function)(unsigned char *out, const unsigned char *in);
 
@@ -27,7 +29,7 @@ void CVerusHash::Hash(void *result, const void *data, size_t _len)
     memset(bufPtr, 0, 32);
 
     // digest up to 32 bytes at a time
-    for ( ; pos < len; pos += 32)
+    for (; pos < len; pos += 32)
     {
         if (len - pos >= 32)
         {
@@ -65,7 +67,7 @@ CVerusHash &CVerusHash::Write(const unsigned char *data, size_t _len)
     uint32_t pos, len = _len;
 
     // digest up to 32 bytes at a time
-    for ( pos = 0; pos < len; )
+    for (pos = 0; pos < len;)
     {
         uint32_t room = 32 - curPos;
 
@@ -89,10 +91,18 @@ CVerusHash &CVerusHash::Write(const unsigned char *data, size_t _len)
     return *this;
 }
 
-// to be declared and accessed from C
-void verus_hash(void *result, const void *data, size_t len)
+extern "C"
 {
-    return CVerusHash::Hash(result, data, len);
+    // to be declared and accessed from C
+    void verus_hash_init()
+    {
+        CVerusHash::init();
+    }
+
+    void verus_hash(void *result, const void *data, size_t len)
+    {
+        return CVerusHash::Hash(result, data, len);
+    }
 }
 
 void (*CVerusHashV2::haraka512Function)(unsigned char *out, const unsigned char *in);
@@ -130,7 +140,7 @@ void CVerusHashV2::Hash(void *result, const void *data, size_t len)
     memset(bufPtr, 0, 32);
 
     // digest up to 32 bytes at a time
-    for ( ; pos < len; pos += 32)
+    for (; pos < len; pos += 32)
     {
         if (len - pos >= 32)
         {
@@ -155,7 +165,7 @@ CVerusHashV2 &CVerusHashV2::Write(const unsigned char *data, size_t len)
     unsigned char *tmp;
 
     // digest up to 32 bytes at a time
-    for (int pos = 0; pos < len; )
+    for (int pos = 0; pos < len;)
     {
         int room = 32 - curPos;
 
@@ -180,7 +190,14 @@ CVerusHashV2 &CVerusHashV2::Write(const unsigned char *data, size_t len)
 }
 
 // to be declared and accessed from C
-void verus_hash_v2(void *result, const void *data, size_t len)
+extern "C"
 {
-    return CVerusHashV2::Hash(result, data, len);
+    void verus_hash_v2_init()
+    {
+        CVerusHashV2::init();
+    }
+    void verus_hash_v2(void *result, const void *data, size_t len)
+    {
+        return CVerusHashV2::Hash(result, data, len);
+    }
 }
