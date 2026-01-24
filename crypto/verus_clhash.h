@@ -99,7 +99,7 @@ extern "C"
     inline bool IsCPUVerusOptimized()
     {
 // just to make sure we can also test in Apple Silicon Rosetta mode
-#if defined(__APPLE__) && defined(__x86_64__)
+#if defined(__APPLE__) && defined(__arm__) && defined(__x86_64__)
         __cpuverusoptimized = false;
 #elif defined(__arm__) || defined(__aarch64__)
     long hwcaps = getauxval(AT_HWCAP);
