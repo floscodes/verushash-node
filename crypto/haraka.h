@@ -26,7 +26,11 @@ Optimized Implementations for Haraka256 and Haraka512
 #ifndef HARAKA_H_
 #define HARAKA_H_
 
-#include "immintrin.h"
+#if defined(__x86_64__) || defined(_M_X64)
+#include <immintrin.h>
+#else
+#include "SSE2NEON.h"
+#endif
 
 #define NUMROUNDS 5
 
@@ -103,29 +107,26 @@ extern u128 rc[40];
   s2 = _mm_unpackhi_epi32(s1, tmp); \
   s1 = _mm_unpacklo_epi32(s1, tmp);
 
-#define TRUNCSTORE(out, s0, s1, s2, s3)       \
-  *(u64 *)(out) = *(((u64 *)&(s0) + 1));      \
-  *(u64 *)(out + 8) = *(((u64 *)&(s1) + 1));  \
-  *(u64 *)(out + 16) = *(((u64 *)&(s2) + 0)); \
-  *(u64 *)(out + 24) = *(((u64 *)&(s3) + 0));
+#define TRUNCSTORE(out, s0, s1, s2, s3)     \
+  *(u64 *)(out) = *(((u64 *)&s0 + 1));      \
+  *(u64 *)(out + 8) = *(((u64 *)&s1 + 1));  \
+  *(u64 *)(out + 16) = *(((u64 *)&s2 + 0)); \
+  *(u64 *)(out + 24) = *(((u64 *)&s3 + 0));
 
-extern "C"
-{
-  void load_constants();
-  void test_implementations();
+void load_constants();
+void test_implementations();
 
-  void load_constants();
+void load_constants();
 
-  void haraka256(unsigned char *out, const unsigned char *in);
-  void haraka256_keyed(unsigned char *out, const unsigned char *in, const u128 *rc);
-  void haraka256_4x(unsigned char *out, const unsigned char *in);
-  void haraka256_8x(unsigned char *out, const unsigned char *in);
+void haraka256(unsigned char *out, const unsigned char *in);
+void haraka256_keyed(unsigned char *out, const unsigned char *in, const u128 *rc);
+void haraka256_4x(unsigned char *out, const unsigned char *in);
+void haraka256_8x(unsigned char *out, const unsigned char *in);
 
-  void haraka512(unsigned char *out, const unsigned char *in);
-  void haraka512_zero(unsigned char *out, const unsigned char *in);
-  void haraka512_keyed(unsigned char *out, const unsigned char *in, const u128 *rc);
-  void haraka512_4x(unsigned char *out, const unsigned char *in);
-  void haraka512_8x(unsigned char *out, const unsigned char *in);
-}
+void haraka512(unsigned char *out, const unsigned char *in);
+void haraka512_zero(unsigned char *out, const unsigned char *in);
+void haraka512_keyed(unsigned char *out, const unsigned char *in, const u128 *rc);
+void haraka512_4x(unsigned char *out, const unsigned char *in);
+void haraka512_8x(unsigned char *out, const unsigned char *in);
 
 #endif

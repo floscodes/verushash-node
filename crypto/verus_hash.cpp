@@ -11,8 +11,18 @@ bit output.
 #include <string.h>
 #include "common.h"
 #include "verus_hash.h"
-#include "haraka.h"
-#include "haraka_portable.h"
+
+#if defined(__x86_64__) || defined(_M_X64)
+// Falls Intel/AMD (64-bit)
+#ifndef _WIN32
+#include <x86intrin.h>
+#else
+#include <immintrin.h>
+#endif
+#elif defined(__aarch64__) || defined(_M_ARM64)
+// Falls Apple Silicon (M1/M2/M3/M4) oder ARM64
+#include "SSE2NEON.h"
+#endif
 
 void (*CVerusHash::haraka512Function)(unsigned char *out, const unsigned char *in);
 
@@ -91,18 +101,10 @@ CVerusHash &CVerusHash::Write(const unsigned char *data, size_t _len)
     return *this;
 }
 
-extern "C"
+// to be declared and accessed from C
+void verus_hash(void *result, const void *data, size_t len)
 {
-    // to be declared and accessed from C
-    void verus_hash_init()
-    {
-        CVerusHash::init();
-    }
-
-    void verus_hash(void *result, const void *data, size_t len)
-    {
-        return CVerusHash::Hash(result, data, len);
-    }
+    return CVerusHash::Hash(result, data, len);
 }
 
 void (*CVerusHashV2::haraka512Function)(unsigned char *out, const unsigned char *in);
@@ -190,14 +192,7 @@ CVerusHashV2 &CVerusHashV2::Write(const unsigned char *data, size_t len)
 }
 
 // to be declared and accessed from C
-extern "C"
+void verus_hash_v2(void *result, const void *data, size_t len)
 {
-    void verus_hash_v2_init()
-    {
-        CVerusHashV2::init();
-    }
-    void verus_hash_v2(void *result, const void *data, size_t len)
-    {
-        return CVerusHashV2::Hash(result, data, len);
-    }
+    return CVerusHashV2::Hash(result, data, len);
 }

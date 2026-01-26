@@ -20,17 +20,36 @@
 #ifndef INCLUDE_VERUS_CLHASH_H
 #define INCLUDE_VERUS_CLHASH_H
 
-#ifndef _WIN32
-#include <cpuid.h>
-#include <x86intrin.h>
-#else
-#include <intrin.h>
-#endif // !WIN32
-
 #include <stdlib.h>
 #include <stdint.h>
 #include <stddef.h>
 #include <assert.h>
+
+#ifdef _WIN32
+#undef __cpuid
+#include <intrin.h>
+#else
+
+#if defined(__arm__) || defined(__aarch64__)
+#include "SSE2NEON.h"
+#if defined(__linux__)
+#include <sys/auxv.h>
+#include <asm/hwcap.h>
+#elif defined(__APPLE__)
+#include <sys/sysctl.h>
+#include <sys/types.h>
+#endif
+#else
+#include <cpuid.h>
+#include <x86intrin.h>
+#endif // !WIN32
+#endif
+
+#include <boost/thread.hpp>
+#include "tinyformat.h"
+#ifdef __APPLE__
+void __tls_init();
+#endif
 
 #ifdef __cplusplus
 extern "C"
@@ -51,7 +70,7 @@ extern "C"
         VERUSKEYSIZE = 1024 * 8 + (40 * 16),
         SOLUTION_VERUSHHASH_V2 = 1,   // this must be in sync with CScript::SOLUTION_VERUSV2
         SOLUTION_VERUSHHASH_V2_1 = 3, // this must be in sync with CScript::ACTIVATE_VERUSHASH2_1
-        SOLUTION_VERUSHHASH_V2_2 = 4
+        SOLUTION_VERUSHHASH_V2_2 = 4  // this must be in sync with CScript::ACTIVATE_VERUSHASH2_2
     };
 
     struct verusclhash_descr
@@ -92,26 +111,36 @@ extern "C"
     __m128i __verusclmulwithoutreduction64alignedrepeat(__m128i *randomsource, const __m128i buf[4], uint64_t keyMask, __m128i **pMoveScratch);
     __m128i __verusclmulwithoutreduction64alignedrepeat_sv2_1(__m128i *randomsource, const __m128i buf[4], uint64_t keyMask, __m128i **pMoveScratch);
     __m128i __verusclmulwithoutreduction64alignedrepeat_sv2_2(__m128i *randomsource, const __m128i buf[4], uint64_t keyMask, __m128i **pMoveScratch);
+
     __m128i __verusclmulwithoutreduction64alignedrepeat_port(__m128i *randomsource, const __m128i buf[4], uint64_t keyMask, __m128i **pMoveScratch);
     __m128i __verusclmulwithoutreduction64alignedrepeat_sv2_1_port(__m128i *randomsource, const __m128i buf[4], uint64_t keyMask, __m128i **pMoveScratch);
     __m128i __verusclmulwithoutreduction64alignedrepeat_sv2_2_port(__m128i *randomsource, const __m128i buf[4], uint64_t keyMask, __m128i **pMoveScratch);
 
     inline bool IsCPUVerusOptimized()
     {
-// just to make sure we can also test in Apple Silicon Rosetta mode
-#if defined(__APPLE__) && defined(__arm__) && defined(__x86_64__)
-        __cpuverusoptimized = false;
-#elif defined(__arm__) || defined(__aarch64__)
-    long hwcaps = getauxval(AT_HWCAP);
+#if defined(__arm__) || defined(__aarch64__)
+        long hwcaps = getauxval(AT_HWCAP);
 
-    if ((hwcaps & HWCAP_AES) && (hwcaps & HWCAP_PMULL))
-        __cpuverusoptimized = true;
-    else
-        __cpuverusoptimized = false;
+        if ((hwcaps & HWCAP_AES) && (hwcaps & HWCAP_PMULL))
+            __cpuverusoptimized = true;
+        else
+            __cpuverusoptimized = false;
 
 #else
     if (__cpuverusoptimized & 0x80)
     {
+#ifdef _MSC_VER
+#define bit_AVX (1 << 28)
+#define bit_AES (1 << 25)
+#define bit_PCLMUL (1 << 1)
+        // https://insufficientlycomplicated.wordpress.com/2011/11/07/detecting-intel-advanced-vector-extensions-avx-in-visual-studio/
+        // bool cpuAVXSuport = cpuInfo[2] & (1 << 28) || false;
+
+        int cpuInfo[4];
+        __cpuid(cpuInfo, 1);
+        __cpuverusoptimized = ((cpuInfo[2] & (bit_AVX | bit_AES | bit_PCLMUL)) == (bit_AVX | bit_AES | bit_PCLMUL));
+
+#else
         unsigned int eax, ebx, ecx, edx;
         if (!__get_cpuid(1, &eax, &ebx, &ecx, &edx))
         {
@@ -121,6 +150,7 @@ extern "C"
         {
             __cpuverusoptimized = ((ecx & (bit_AVX | bit_AES | bit_PCLMUL)) == (bit_AVX | bit_AES | bit_PCLMUL));
         }
+#endif
     }
 #endif
         return __cpuverusoptimized;
@@ -137,6 +167,7 @@ extern "C"
     uint64_t verusclhash_sv2_1_port(void *random, const unsigned char buf[64], uint64_t keyMask, __m128i **pMoveScratch);
     uint64_t verusclhash_sv2_2(void *random, const unsigned char buf[64], uint64_t keyMask, __m128i **pMoveScratch);
     uint64_t verusclhash_sv2_2_port(void *random, const unsigned char buf[64], uint64_t keyMask, __m128i **pMoveScratch);
+
     void *alloc_aligned_buffer(uint64_t bufSize);
 
 #ifdef __cplusplus
@@ -144,6 +175,32 @@ extern "C"
 #endif
 
 #ifdef __cplusplus
+
+#include <vector>
+#include <string>
+#include <iostream>
+
+template <typename T>
+inline std::string LEToHex(const T &pt)
+{
+    std::stringstream ss;
+    for (int l = sizeof(T) - 1; l >= 0; l--)
+    {
+        ss << strprintf("%02x", *((unsigned char *)&pt + l));
+    }
+    return ss.str();
+}
+
+inline std::string HexBytes(const unsigned char *buf, int size)
+{
+    std::stringstream ss;
+    for (int l = 0; l < size; l++)
+    {
+        ss << strprintf("%02x", *(buf + l));
+    }
+    return ss.str();
+}
+
 // special high speed hasher for VerusHash 2.0
 struct verusclhasher
 {
@@ -163,9 +220,9 @@ struct verusclhasher
     }
 
     // align on 256 bit boundary at end
-    verusclhasher(uint64_t keysize = VERUSKEYSIZE, int solutionVersion = SOLUTION_VERUSHHASH_V2) : keySizeInBytes((keysize >> 5) << 5)
+    verusclhasher(uint64_t keysize = VERUSKEYSIZE, int solutionVersion = SOLUTION_VERUSHHASH_V2_1) : keySizeInBytes((keysize >> 5) << 5)
     {
-#if defined(_WIN32) || defined(__linux__)
+#ifdef __APPLE__
         __tls_init();
 #endif
         if (IsCPUVerusOptimized())
