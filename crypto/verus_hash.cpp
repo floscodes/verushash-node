@@ -3,26 +3,14 @@
 // file COPYING or http://www.opensource.org/licenses/mit-license.php.
 
 /*
-This provides the PoW hash function for Verus, a CPU-optimized hash
-function with a Haraka V2 core. Unlike Haraka, which is made for short
-inputs only, Verus Hash takes any length of input and produces a 256
+This provides the PoW hash function for Verus, a CPU-optimized hash 
+function with a Haraka V2 core. Unlike Haraka, which is made for short 
+inputs only, Verus Hash takes any length of input and produces a 256 
 bit output.
 */
 #include <string.h>
 #include "common.h"
 #include "verus_hash.h"
-
-#if defined(__x86_64__) || defined(_M_X64)
-// Falls Intel/AMD (64-bit)
-#ifndef _WIN32
-#include <x86intrin.h>
-#else
-#include <immintrin.h>
-#endif
-#elif defined(__aarch64__) || defined(_M_ARM64)
-// Falls Apple Silicon (M1/M2/M3/M4) oder ARM64
-#include "SSE2NEON.h"
-#endif
 
 void (*CVerusHash::haraka512Function)(unsigned char *out, const unsigned char *in);
 
@@ -39,7 +27,7 @@ void CVerusHash::Hash(void *result, const void *data, size_t _len)
     memset(bufPtr, 0, 32);
 
     // digest up to 32 bytes at a time
-    for (; pos < len; pos += 32)
+    for ( ; pos < len; pos += 32)
     {
         if (len - pos >= 32)
         {
@@ -77,7 +65,7 @@ CVerusHash &CVerusHash::Write(const unsigned char *data, size_t _len)
     uint32_t pos, len = _len;
 
     // digest up to 32 bytes at a time
-    for (pos = 0; pos < len;)
+    for ( pos = 0; pos < len; )
     {
         uint32_t room = 32 - curPos;
 
@@ -142,7 +130,7 @@ void CVerusHashV2::Hash(void *result, const void *data, size_t len)
     memset(bufPtr, 0, 32);
 
     // digest up to 32 bytes at a time
-    for (; pos < len; pos += 32)
+    for ( ; pos < len; pos += 32)
     {
         if (len - pos >= 32)
         {
@@ -167,7 +155,7 @@ CVerusHashV2 &CVerusHashV2::Write(const unsigned char *data, size_t len)
     unsigned char *tmp;
 
     // digest up to 32 bytes at a time
-    for (int pos = 0; pos < len;)
+    for (int pos = 0; pos < len; )
     {
         int room = 32 - curPos;
 
