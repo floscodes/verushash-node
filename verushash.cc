@@ -4,44 +4,57 @@
 
 extern "C" {
 
-static std::once_flag init_flag;
+bool initialized = false;
 
-static void ensure_init()
+CVerusHash* vh;
+CVerusHashV2* vh2;
+CVerusHashV2* vh2b1;
+CVerusHashV2* vh2b2;
+
+void initialize()
 {
-    std::call_once(init_flag, []() {
+    if (!initialized)
+    {
         CVerusHash::init();
         CVerusHashV2::init();
-    });
+    }
+    
+    vh = new CVerusHash();
+    vh2 = new CVerusHashV2(SOLUTION_VERUSHHASH_V2);
+    vh2b1 = new CVerusHashV2(SOLUTION_VERUSHHASH_V2_1);
+	vh2b2 = new CVerusHashV2(SOLUTION_VERUSHHASH_V2_2);
+    
+    initialized = true;
 }
 
 void verus_v1_hash(void *result, const void *data, size_t len)
 {
-    ensure_init();
+    initialize();
     verus_hash(result, data, len);
 }
 
 void verus_v2_hash(void *result, const void *data, size_t len)
 {
-    ensure_init();
-    CVerusHashV2 hasher(SOLUTION_VERUSHHASH_V2);
-    hasher.Write((const unsigned char*)data, len);
-    hasher.Finalize((unsigned char*)result);
+    initialize();
+    vh2->Reset();
+    vh2->Write((const unsigned char*)data, len);
+    vh2->Finalize((unsigned char *)result);
 }
 
 void verus_v2_1_hash(void *result, const void *data, size_t len)
 {
-    ensure_init();
-    CVerusHashV2 hasher(SOLUTION_VERUSHHASH_V2_1);
-    hasher.Write((const unsigned char*)data, len);
-    hasher.Finalize2b((unsigned char*)result);
+    initialize();
+    vh2b1->Reset();
+    vh2b1->Write((const unsigned char*)data, len);
+    vh2b1->Finalize2b((unsigned char*)result);
 }
 
 void verus_v2_2_hash(void *result, const void *data, size_t len)
 {
-    ensure_init();
-    CVerusHashV2 hasher(SOLUTION_VERUSHHASH_V2_2);
-    hasher.Write((const unsigned char*)data, len);
-    hasher.Finalize2b((unsigned char*)result);
+    initialize();
+    vh2b2->Reset();
+    vh2b2->Write((const unsigned char*)data, len);
+    vh2b2->Finalize2b((unsigned char*)result);
 }
 
 }
