@@ -38,7 +38,11 @@ extern "C"
 #endif
 
 #ifdef _WIN32
-#define posix_memalign(p, a, s) (((*(p)) = _aligned_malloc((s), (a))), *(p) ? 0 : errno)
+#include <malloc.h>
+#include <errno.h>
+#define posix_memalign(p, a, s) (((*(p)) = _aligned_malloc((s), (a))), *(p) ? 0 : ENOMEM)
+#define _aligned_free_wrapper(p) _aligned_free(p)
+#define free(p) _aligned_free_wrapper(p)
     typedef unsigned char u_char;
 #endif
 
@@ -68,7 +72,11 @@ extern "C"
         {
             if (ptr && ptr != newptr)
             {
+                #ifdef _WIN32
+                free(ptr);
+                #else
                 std::free(ptr);
+                #endif
             }
             ptr = newptr;
         }
