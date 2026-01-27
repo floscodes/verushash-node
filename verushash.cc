@@ -26,34 +26,30 @@ static void initialize()
     });
 }
 
-void verus_v1_hash(void *result, const void *data, size_t len)
-{
+void verus_v1_hash(void* result, const void* data, size_t len) {
     initialize();
     verus_hash(result, data, len);
 }
 
-void verus_v2_hash(void *result, const void *data, size_t len)
-{
+void verus_v2_hash(void* result, const void* data, size_t len) {
     initialize();
     vh2->Reset();
-    vh2->Write((const unsigned char*)data, len);
-    vh2->Finalize((unsigned char *)result);
+    vh2->Write(reinterpret_cast<const unsigned char*>(data), len);
+    vh2->Finalize(reinterpret_cast<unsigned char*>(result));
 }
 
-void verus_v2_1_hash(void *result, const void *data, size_t len)
-{
+void verus_v2_1_hash(void* result, const void* data, size_t len) {
     initialize();
     vh2b1->Reset();
-    vh2b1->Write((const unsigned char*)data, len);
-    vh2b1->Finalize2b((unsigned char*)result);
+    vh2b1->Write(reinterpret_cast<const unsigned char*>(data), len);
+    vh2b1->Finalize2b(reinterpret_cast<unsigned char*>(result));
 }
 
-void verus_v2_2_hash(void *result, const void *data, size_t len)
-{
+void verus_v2_2_hash(void* result, const void* data, size_t len) {
     initialize();
     vh2b2->Reset();
-    vh2b2->Write((const unsigned char*)data, len);
-    vh2b2->Finalize2b((unsigned char*)result);
+    vh2b2->Write(reinterpret_cast<const unsigned char*>(data), len);
+    vh2b2->Finalize2b(reinterpret_cast<unsigned char*>(result));
 }
 
 }
