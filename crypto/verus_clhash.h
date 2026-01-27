@@ -162,12 +162,11 @@ struct verusclhasher
     // align on 256 bit boundary at end
     verusclhasher(uint64_t keysize = VERUSKEYSIZE, int solutionVersion = SOLUTION_VERUSHHASH_V2) : keySizeInBytes((keysize >> 5) << 5)
     {
-#ifdef __APPLE__
-#ifdef __aarch64__
+
+#if !defined(__APPLE__) && !defined(__MINGW32__)
+  __tls_init();
 #endif
-#else
-        __tls_init();
-#endif
+
         if (IsCPUVerusOptimized())
         {
             if (solutionVersion >= SOLUTION_VERUSHHASH_V2_1)

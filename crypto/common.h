@@ -13,7 +13,7 @@
 #include <assert.h>
 
 // #include "sodium.h"
-#ifdef WIN32
+#if defined(_WIN32) || defined(__WIN32__) || defined(WIN32)
 #include "compat/endian.h"
 #elif defined(__APPLE__)
 #include "endian_portable.h"

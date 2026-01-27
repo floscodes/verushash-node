@@ -17,11 +17,14 @@ This provides the PoW hash function for Verus, enabling CPU mining.
 #include "uint256.h"
 #include "verus_clhash.h"
 
-extern "C" 
-{
+#ifdef __cplusplus
+extern "C" {
+#endif
 #include "haraka.h"
 #include "haraka_portable.h"
+#ifdef __cplusplus
 }
+#endif
 
 class CVerusHash
 {
