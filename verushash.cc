@@ -6,25 +6,24 @@ extern "C" {
 
 bool initialized = false;
 
-CVerusHash* vh;
-CVerusHashV2* vh2;
-CVerusHashV2* vh2b1;
-CVerusHashV2* vh2b2;
+CVerusHash* vh = nullptr;
+CVerusHashV2* vh2 = nullptr;
+CVerusHashV2* vh2b1 = nullptr;
+CVerusHashV2* vh2b2 = nullptr;
 
-void initialize()
+static std::once_flag init_flag;
+
+static void initialize()
 {
-    if (!initialized)
-    {
+    std::call_once(init_flag, []() {
         CVerusHash::init();
         CVerusHashV2::init();
-    }
-    
-    vh = new CVerusHash();
-    vh2 = new CVerusHashV2(SOLUTION_VERUSHHASH_V2);
-    vh2b1 = new CVerusHashV2(SOLUTION_VERUSHHASH_V2_1);
-	vh2b2 = new CVerusHashV2(SOLUTION_VERUSHHASH_V2_2);
-    
-    initialized = true;
+
+        vh   = new CVerusHash();
+        vh2  = new CVerusHashV2(SOLUTION_VERUSHHASH_V2);
+        vh2b1 = new CVerusHashV2(SOLUTION_VERUSHHASH_V2_1);
+        vh2b2 = new CVerusHashV2(SOLUTION_VERUSHHASH_V2_2);
+    });
 }
 
 void verus_v1_hash(void *result, const void *data, size_t len)
