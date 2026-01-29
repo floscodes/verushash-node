@@ -1,66 +1,54 @@
 #include <stdint.h>
-#include <vector>
-
 #include "crypto/verus_hash.h"
 
-CVerusHash *vh;
-CVerusHashV2 *vh2;
-CVerusHashV2 *vh2b1;
-CVerusHashV2 *vh2b2;
-
-void ensure_initialized()
+static void ensure_initialized()
 {
-    static bool static_init = []()
-    {
+    static bool once = [](){
         CVerusHash::init();
         CVerusHashV2::init();
         return true;
     }();
-
-    vh = new CVerusHash();
-    vh2 = new CVerusHashV2(SOLUTION_VERUSHHASH_V2);
-    vh2b1 = new CVerusHashV2(SOLUTION_VERUSHHASH_V2_1);
-    vh2b2 = new CVerusHashV2(SOLUTION_VERUSHHASH_V2_2);
+    (void)once;
 }
 
-#ifdef __cplusplus
-extern "C"
+extern "C" {
+
+// ---------- V1 (stateless, korrekt) ----------
+void verus_v1_hash(void *result, const void *data, size_t len)
 {
-#endif
-    void verus_v1_hash(void *result, const void *data, size_t len)
-    {
-
-        ensure_initialized();
-
-        verus_hash(result, data, len);
-    }
-
-    void verus_v2_hash(void *result, const void *data, size_t len)
-    {
-        ensure_initialized();
-
-        vh2->Reset();
-        vh2->Write((const unsigned char *)data, len);
-        vh2->Finalize((unsigned char *)result);
-    }
-
-    void verus_v2_1_hash(void *result, const void *data, size_t len)
-    {
-        ensure_initialized();
-
-        vh2b1->Reset();
-        vh2b1->Write((const unsigned char *)data, len);
-        vh2b1->Finalize2b((unsigned char *)result);
-    }
-
-    void verus_v2_2_hash(void *result, const void *data, size_t len)
-    {
-        ensure_initialized();
-
-        vh2b2->Reset();
-        vh2b2->Write((const unsigned char *)data, len);
-        vh2b2->Finalize2b((unsigned char *)result);
-    }
-#ifdef __cplusplus
+    ensure_initialized();
+    verus_hash(result, data, len);
 }
-#endif
+
+// ---------- V2 ----------
+void verus_v2_hash(void *result, const void *data, size_t len)
+{
+    ensure_initialized();
+    thread_local CVerusHashV2 vh(SOLUTION_VERUSHHASH_V2);
+
+    vh.Reset();
+    vh.Write((const unsigned char*)data, len);
+    vh.Finalize((unsigned char*)result);
+}
+
+void verus_v2_1_hash(void *result, const void *data, size_t len)
+{
+    ensure_initialized();
+    thread_local CVerusHashV2 vh(SOLUTION_VERUSHHASH_V2_1);
+
+    vh.Reset();
+    vh.Write((const unsigned char*)data, len);
+    vh.Finalize2b((unsigned char*)result);
+}
+
+void verus_v2_2_hash(void *result, const void *data, size_t len)
+{
+    ensure_initialized();
+    thread_local CVerusHashV2 vh(SOLUTION_VERUSHHASH_V2_2);
+
+    vh.Reset();
+    vh.Write((const unsigned char*)data, len);
+    vh.Finalize2b((unsigned char*)result);
+}
+
+}

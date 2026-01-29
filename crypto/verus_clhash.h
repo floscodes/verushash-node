@@ -173,7 +173,7 @@ struct verusclhasher
 
 #if !defined(__APPLE__) && !defined(__MINGW32__)
   __tls_init();
-#endif
+#endif       
 
         if (IsCPUVerusOptimized())
         {
