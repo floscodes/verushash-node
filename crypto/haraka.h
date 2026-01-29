@@ -109,6 +109,10 @@ extern u128 rc[40];
   *(u64*)(out + 16) = *(((u64*)&(s2) + 0)); \
   *(u64*)(out + 24) = *(((u64*)&(s3) + 0));
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 void load_constants();
 void test_implementations();
 
@@ -124,5 +128,9 @@ void haraka512_zero(unsigned char *out, const unsigned char *in);
 void haraka512_keyed(unsigned char *out, const unsigned char *in, const u128 *rc);
 void haraka512_4x(unsigned char *out, const unsigned char *in);
 void haraka512_8x(unsigned char *out, const unsigned char *in);
+
+#ifdef __cplusplus
+}
+#endif
 
 #endif
