@@ -49,9 +49,6 @@ void CVerusHash::Hash(void *result, const void *data, size_t _len)
 
 void CVerusHash::init()
 {
-    #ifdef __MINGW32__
-    haraka512Function = &haraka512_port_zero;
-    #else
     if (IsCPUVerusOptimized())
     {
         haraka512Function = &haraka512_zero;
@@ -60,7 +57,6 @@ void CVerusHash::init()
     {
         haraka512Function = &haraka512_port_zero;
     }
-    #endif
 }
 
 CVerusHash &CVerusHash::Write(const unsigned char *data, size_t _len)
@@ -105,12 +101,6 @@ void (*CVerusHashV2::haraka256Function)(unsigned char *out, const unsigned char 
 
 void CVerusHashV2::init()
 {
-    #ifdef __MINGW32__
-    load_constants_port();
-    haraka512Function = &haraka512_port;
-    haraka512KeyedFunction = &haraka512_port_keyed;
-    haraka256Function = &haraka256_port;
-    #else
     if (IsCPUVerusOptimized())
     {
         load_constants();
@@ -126,7 +116,6 @@ void CVerusHashV2::init()
         haraka512KeyedFunction = &haraka512_port_keyed;
         haraka256Function = &haraka256_port;
     }
-    #endif
 }
 
 void CVerusHashV2::Hash(void *result, const void *data, size_t len)

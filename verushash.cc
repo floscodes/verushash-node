@@ -13,14 +13,12 @@ static void ensure_initialized()
 
 extern "C" {
 
-// ---------- V1 (stateless, korrekt) ----------
 void verus_v1_hash(void *result, const void *data, size_t len)
 {
     ensure_initialized();
     verus_hash(result, data, len);
 }
 
-// ---------- V2 ----------
 void verus_v2_hash(void *result, const void *data, size_t len)
 {
     ensure_initialized();
